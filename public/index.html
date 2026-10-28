@@ -6,6 +6,7 @@
   <title>Cosa è peggio?</title>
   <link rel="stylesheet" href="style.css">
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
@@ -75,10 +76,16 @@
     </div>
 
     <!-- CLASSIFICA FINALE -->
+    <!-- CLASSIFICA FINALE & PODIO -->
     <div id="endScreen" class="card hidden">
       🏆 <h2>Classifica Finale</h2>
+      
+      <!-- PODIO GRAFICO A 3 GRADINI -->
+      <div id="podiumContainer" class="podium-container"></div>
+
+      <!-- LISTA COMPLETA GIOCATORI -->
       <ol id="finalLeaderboard"></ol>
-      <button onclick="location.reload()" class="btn">Torna al Menu</button>
+      <button onclick="location.reload()" class="btn success">Nuova Partita</button>
     </div>
   </div>
 

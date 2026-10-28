@@ -275,11 +275,71 @@ socket.on('gameOver', ({ leaderboard }) => {
   gameScreen.classList.add('hidden');
   endScreen.classList.remove('hidden');
 
+  // Ordina per punteggio decrescente
+  const sorted = leaderboard.sort((a,b) => b.score - a.score);
+
+  // RENDER PODIO (Top 3)
+  const podium = document.getElementById('podiumContainer');
+  podium.innerHTML = '';
+
+  if (sorted[0]) { // 1° Posto
+    podium.innerHTML += `
+      <div class="podium-step first">
+        <span class="podium-crown">👑</span>
+        <span class="podium-name">${sorted[0].name}</span>
+        <span class="podium-score">${sorted[0].score} pt</span>
+      </div>`;
+  }
+  if (sorted[1]) { // 2° Posto
+    podium.innerHTML += `
+      <div class="podium-step second">
+        <span class="podium-crown">🥈</span>
+        <span class="podium-name">${sorted[1].name}</span>
+        <span class="podium-score">${sorted[1].score} pt</span>
+      </div>`;
+  }
+  if (sorted[2]) { // 3° Posto
+    podium.innerHTML += `
+      <div class="podium-step third">
+        <span class="podium-crown">🥉</span>
+        <span class="podium-name">${sorted[2].name}</span>
+        <span class="podium-score">${sorted[2].score} pt</span>
+      </div>`;
+  }
+
+  // LISTA COMPLETA
   const board = document.getElementById('finalLeaderboard');
   board.innerHTML = '';
-  leaderboard.sort((a,b) => b.score - a.score).forEach((p, idx) => {
+  sorted.forEach((p, idx) => {
     const li = document.createElement('li');
     li.innerHTML = `<span>#${idx+1} <b>${p.name}</b></span> <span><b>${p.score} pt</b></span>`;
     board.appendChild(li);
   });
+
+  // ESPLOSIONE CORIANDOLI
+  if (typeof confetti === 'function') {
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+      confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: ['#ffd32a', '#6c5ce7', '#2ed573']
+      });
+      confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: ['#ffd32a', '#6c5ce7', '#2ed573']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
+  }
 });
