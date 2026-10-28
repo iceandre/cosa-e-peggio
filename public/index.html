@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cosa è peggio?</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+  <!-- MODALE REGOLE -->
+  <div id="rulesModal" class="modal">
+    <div class="modal-content">
+      <h2>📜 Regole di "Cosa è peggio?"</h2>
+      <ul>
+        <li>A turno, un giocatore è il <strong>Giudice</strong>.</li>
+        <li>Vengono mostrati <strong>5 eventi spaventosi/fastidiosi</strong>.</li>
+        <li>Il Giudice deve ordinarli dal <strong>1° (Peggiore)</strong> al <strong>5° (Meno peggio)</strong>.</li>
+        <li>Gli altri giocatori devono indovinare l'esatto ordine del Giudice.</li>
+        <li><strong>Punti:</strong> 1 pt per ogni posizione indovinata (max 5 pt).</li>
+        <li>⚠️ Se <em>nessuno</em> fa almeno 1 punto, il Giudice perde 2 punti!</li>
+      </ul>
+      <div class="modal-actions">
+        <label><input type="checkbox" id="dontShowRules"> Non mostrare più</label>
+        <button id="closeRulesBtn" class="btn">Ho capito!</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>🔥 Cosa è peggio?</h1>
+
+    <!-- SCHERMATA LOGIN / LOBBY JOIN -->
+    <div id="joinScreen" class="card">
+      <h3>Entra in partita</h3>
+      <input type="text" id="playerName" placeholder="Il tuo Nome" maxlength="15">
+      <input type="text" id="roomCode" placeholder="Codice Stanza (es. STANZA1)" style="text-transform:uppercase">
+      <button id="joinBtn" class="btn">Entra / Crea Stanza</button>
+    </div>
+
+    <!-- LOBBY D'ATTESA -->
+    <div id="lobbyScreen" class="card hidden">
+      <h3>Stanza: <span id="displayRoomCode"></span></h3>
+      <h4>Giocatori in attesa:</h4>
+      <ul id="playerList"></ul>
+      <p id="hostControls" class="hidden">
+        <button id="startGameBtn" class="btn success">Inizia Partita!</button>
+      </p>
+    </div>
+
+    <!-- AREA DI GIOCO -->
+    <div id="gameScreen" class="card hidden">
+      <div class="header-info">
+        <div id="roleBadge" class="badge"></div>
+        <div id="hostEndGameArea" class="hidden">
+          <button id="endGameBtn" class="btn danger">Termina Partita</button>
+        </div>
+      </div>
+
+      <h2 id="instructionText">Ordina le opzioni dal PEGGIORE (1) al MENO PEGGIO (5):</h2>
+
+      <!-- LISTA TRASCINABILE DEGLI EVENTI -->
+      <ul id="sortableList" class="sortable-list"></ul>
+
+      <button id="submitOrderBtn" class="btn">Conferma Ordine</button>
+      <div id="waitingMessage" class="hidden">In attesa delle scelte degli altri giocatori...</div>
+
+      <!-- RISULTATI DEL ROUND -->
+      <div id="roundResults" class="hidden">
+        <h3>Risultati del Round</h3>
+        <div id="resultsDetails"></div>
+        <button id="nextRoundBtn" class="btn hidden">Prossimo Round</button>
+      </div>
+    </div>
+
+    <!-- CLASSIFICA FINALE -->
+    <div id="endScreen" class="card hidden">
+      🏆 <h2>Classifica Finale</h2>
+      <ol id="finalLeaderboard"></ol>
+      <button onclick="location.reload()" class="btn">Torna al Menu</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
