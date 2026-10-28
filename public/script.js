@@ -216,3 +216,71 @@ socket.on('gameOver', ({ leaderboard }) => {
     board.appendChild(li);
   });
 });
+socket.on('roundEnded', ({ results, scores, judgeOrder, events, playerGuesses, isHost }) => {
+  document.getElementById('waitingMessage').classList.add('hidden');
+  const resultsDiv = document.getElementById('roundResults');
+  resultsDiv.classList.remove('hidden');
+
+  // Map rapida degli eventi per ID
+  const eventsMap = {};
+  events.forEach(e => eventsMap[e.id] = e.text);
+
+  let html = '<h4>Punti Ottenuti:</h4><ul class="results-list">';
+  results.forEach(r => {
+    html += `<li><span><b>${r.name}:</b> +${r.pointsGained} pt</span> <span>Totale: <b>${r.totalScore} pt</b></span></li>`;
+  });
+  html += '</ul>';
+
+  // SCHERMATA SHOWDOWN (Confronto Giudice vs Giocatori)
+  html += `<div class="showdown-box">
+    <h4 class="showdown-title">👑 Ordine del Giudice:</h4>
+    <ol style="padding-left:20px; margin:5px 0;">`;
+  
+  judgeOrder.forEach(id => {
+    html += `<li><b>${eventsMap[id]}</b></li>`;
+  });
+  html += `</ol></div>`;
+
+  // Selettore per guardare l'ordine messo dagli altri giocatori
+  const guessKeys = Object.keys(playerGuesses);
+  if (guessKeys.length > 0) {
+    html += `<div class="showdown-box">
+      <h4 class="showdown-title">🔍 Confronta la scelta degli altri:</h4>
+      <select id="playerGuessSelect" class="player-tab-select">`;
+    guessKeys.forEach(pId => {
+      html += `<option value="${pId}">${playerGuesses[pId].name}</option>`;
+    });
+    html += `</select>
+    <div id="playerGuessDetail"></div>
+    </div>`;
+  }
+
+  document.getElementById('resultsDetails').innerHTML = html;
+
+  // Renderizza il dettaglio del giocatore selezionato
+  const selectElem = document.getElementById('playerGuessSelect');
+  if (selectElem) {
+    const renderGuessDetail = (pId) => {
+      const pData = playerGuesses[pId];
+      const detailDiv = document.getElementById('playerGuessDetail');
+      let detailHtml = '<div style="margin-top:8px;">';
+      pData.order.forEach((evtId, idx) => {
+        const isCorrect = (evtId === judgeOrder[idx]);
+        detailHtml += `<div class="showdown-item ${isCorrect ? 'correct' : 'wrong'}">
+          <span>${idx + 1}.</span> <span>${eventsMap[evtId]}</span> ${isCorrect ? '✅' : '❌'}
+        </div>`;
+      });
+      detailHtml += '</div>';
+      detailDiv.innerHTML = detailHtml;
+    };
+
+    selectElem.addEventListener('change', (e) => renderGuessDetail(e.target.value));
+    renderGuessDetail(guessKeys[0]); // Mostra il primo di default
+  }
+
+  if (isHost) {
+    const nextBtn = document.getElementById('nextRoundBtn');
+    nextBtn.classList.remove('hidden');
+    nextBtn.onclick = () => socket.emit('nextRound', { roomCode: currentRoom });
+  }
+});
