@@ -1,11 +1,13 @@
 const socket = io();
 
+// 1. Gestione ID Giocatore (Reconnection)
 let playerId = localStorage.getItem('cosa_e_peggio_player_id');
 if (!playerId) {
   playerId = 'player_' + Math.random().toString(36).substr(2, 9);
   localStorage.setItem('cosa_e_peggio_player_id', playerId);
 }
 
+// 2. Modale Regole
 const rulesModal = document.getElementById('rulesModal');
 const dontShowRules = document.getElementById('dontShowRules');
 if (localStorage.getItem('hideRules') === 'true') {
@@ -18,15 +20,18 @@ document.getElementById('closeRulesBtn').addEventListener('click', () => {
   rulesModal.classList.add('hidden');
 });
 
+// Stato Locale
 let currentRoom = null;
 let isHost = false;
 let draggedItem = null;
 
+// Elementi DOM
 const joinScreen = document.getElementById('joinScreen');
 const lobbyScreen = document.getElementById('lobbyScreen');
 const gameScreen = document.getElementById('gameScreen');
 const endScreen = document.getElementById('endScreen');
 
+// Join / Creazione Stanza
 document.getElementById('joinBtn').addEventListener('click', () => {
   const name = document.getElementById('playerName').value.trim();
   const room = document.getElementById('roomCode').value.trim().toUpperCase();
@@ -37,6 +42,7 @@ document.getElementById('joinBtn').addEventListener('click', () => {
   socket.emit('joinRoom', { roomCode: room, playerName: name, playerId: playerId });
 });
 
+// Aggiornamento Lobby
 socket.on('roomUpdated', ({ players, hostId, gameStarted }) => {
   if (!gameStarted) {
     joinScreen.classList.add('hidden');
@@ -59,10 +65,12 @@ socket.on('roomUpdated', ({ players, hostId, gameStarted }) => {
   }
 });
 
+// Inizio Partita dall'Host
 document.getElementById('startGameBtn').addEventListener('click', () => {
   socket.emit('startGame', { roomCode: currentRoom });
 });
 
+// Inizio Nuovo Round
 socket.on('newRound', ({ judgeId, judgeName, events, isJudge }) => {
   lobbyScreen.classList.add('hidden');
   gameScreen.classList.remove('hidden');
@@ -88,6 +96,7 @@ socket.on('newRound', ({ judgeId, judgeName, events, isJudge }) => {
   renderSortableList(events);
 });
 
+// Render della Lista Trascina/Frecce
 function renderSortableList(events) {
   const list = document.getElementById('sortableList');
   list.innerHTML = '';
@@ -117,7 +126,7 @@ function renderSortableList(events) {
       updateRankNumbers();
     });
 
-    // Pulsanti Up/Down
+    // Frecce Mobile
     li.querySelector('.up-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       const prev = li.previousElementSibling;
@@ -170,6 +179,7 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
+// Invio dell'ordine
 document.getElementById('submitOrderBtn').addEventListener('click', () => {
   const orderedIds = [...document.querySelectorAll('.sortable-item')].map(li => li.dataset.id);
   
@@ -179,37 +189,39 @@ document.getElementById('submitOrderBtn').addEventListener('click', () => {
   document.getElementById('waitingMessage').classList.remove('hidden');
 });
 
-socket.on('roundEnded', ({ results, scores, judgeOrder, events, playerGuesses, isHost }) => {
+// --- RICEZIONE RISULTATI E SHOWDOWN FINE ROUND ---
+socket.on('roundEnded', ({ results, judgeOrder, events, playerGuesses }) => {
   document.getElementById('waitingMessage').classList.add('hidden');
   const resultsDiv = document.getElementById('roundResults');
   resultsDiv.classList.remove('hidden');
 
-  // Mappa veloce degli eventi per ID
+  // Mappa id -> testo evento
   const eventsMap = {};
   events.forEach(e => eventsMap[e.id] = e.text);
 
-  let html = '<h4>Punti Ottenuti in questo Round:</h4><ul class="results-list">';
+  // 1. PUNTI OTTENUTI NEL ROUND
+  let html = '<h3 style="color:#ffd32a; margin-bottom:10px;">📊 Punti del Round:</h3><ul class="results-list">';
   results.forEach(r => {
     html += `<li><span><b>${r.name}:</b> +${r.pointsGained} pt</span> <span>Totale: <b>${r.totalScore} pt</b></span></li>`;
   });
   html += '</ul>';
 
-  // 1. ORDINE DEL GIUDICE
+  // 2. CLASSIFICA UFFICIALE DEL GIUDICE
   html += `<div class="showdown-box">
-    <h4 class="showdown-title">👑 Ordine del Giudice:</h4>
-    <ol style="padding-left:20px; margin:5px 0; text-align:left;">`;
+    <h4 class="showdown-title">👑 Ordine del Giudice (dal 1° al 5°):</h4>
+    <ol style="padding-left:20px; margin:8px 0; text-align:left;">`;
   
   judgeOrder.forEach(id => {
-    html += `<li style="margin: 4px 0;"><b>${eventsMap[id]}</b></li>`;
+    html += `<li style="margin:6px 0; font-size:14px;"><b>${eventsMap[id]}</b></li>`;
   });
   html += `</ol></div>`;
 
-  // 2. CONFRONTO CON LE SCELTE DEGLI ALTRI
+  // 3. COMPARAZIONE DELLE SCELTE DEI GIOCATORI
   const guessKeys = Object.keys(playerGuesses || {});
   
   if (guessKeys.length > 0) {
     html += `<div class="showdown-box">
-      <h4 class="showdown-title">🔍 Confronta le scelte dei giocatori:</h4>
+      <h4 class="showdown-title">🔍 Confronta la scelta di un giocatore:</h4>
       <select id="playerGuessSelect" class="player-tab-select">`;
     guessKeys.forEach(pId => {
       html += `<option value="${pId}">${playerGuesses[pId].name}</option>`;
@@ -217,13 +229,11 @@ socket.on('roundEnded', ({ results, scores, judgeOrder, events, playerGuesses, i
     html += `</select>
     <div id="playerGuessDetail"></div>
     </div>`;
-  } else {
-    html += `<div class="showdown-box"><p style="font-size:13px; color:#aaa;">Nessuna risposta inviata dagli altri giocatori in questo round.</p></div>`;
   }
 
   document.getElementById('resultsDetails').innerHTML = html;
 
-  // Renderizza il dettaglio del giocatore selezionato
+  // Renderizza la lista del giocatore selezionato dal menu a tendina
   const selectElem = document.getElementById('playerGuessSelect');
   if (selectElem && guessKeys.length > 0) {
     const renderGuessDetail = (pId) => {
@@ -231,11 +241,11 @@ socket.on('roundEnded', ({ results, scores, judgeOrder, events, playerGuesses, i
       const detailDiv = document.getElementById('playerGuessDetail');
       if (!pData || !pData.order) return;
 
-      let detailHtml = '<div style="margin-top:8px;">';
+      let detailHtml = '<div style="margin-top:10px;">';
       pData.order.forEach((evtId, idx) => {
         const isCorrect = (evtId === judgeOrder[idx]);
         detailHtml += `<div class="showdown-item ${isCorrect ? 'correct' : 'wrong'}">
-          <span><b>${idx + 1}.</b> ${eventsMap[evtId]}</span> ${isCorrect ? '✅' : '❌'}
+          <span><b>${idx + 1}.</b> ${eventsMap[evtId] || 'Non impostato'}</span> ${isCorrect ? '✅ (+1 pt)' : '❌'}
         </div>`;
       });
       detailHtml += '</div>';
@@ -243,9 +253,10 @@ socket.on('roundEnded', ({ results, scores, judgeOrder, events, playerGuesses, i
     };
 
     selectElem.addEventListener('change', (e) => renderGuessDetail(e.target.value));
-    renderGuessDetail(guessKeys[0]); // Mostra subito il primo giocatore della lista
+    renderGuessDetail(guessKeys[0]); // Mostra subito il primo giocatore
   }
 
+  // Gestione Tasto Prossimo Round per Host
   if (isHost) {
     const nextBtn = document.getElementById('nextRoundBtn');
     nextBtn.classList.remove('hidden');
@@ -253,6 +264,7 @@ socket.on('roundEnded', ({ results, scores, judgeOrder, events, playerGuesses, i
   }
 });
 
+// Termina Partita
 document.getElementById('endGameBtn')?.addEventListener('click', () => {
   if (confirm('Vuoi davvero terminare la partita e mostrare la classifica finale?')) {
     socket.emit('endGame', { roomCode: currentRoom });
