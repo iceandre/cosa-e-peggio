@@ -1,13 +1,11 @@
 const socket = io();
 
-// 1. Gestione Persistenza ID Giocatore (Reconnection)
 let playerId = localStorage.getItem('cosa_e_peggio_player_id');
 if (!playerId) {
   playerId = 'player_' + Math.random().toString(36).substr(2, 9);
   localStorage.setItem('cosa_e_peggio_player_id', playerId);
 }
 
-// 2. Modale Regole ("Non mostrare più")
 const rulesModal = document.getElementById('rulesModal');
 const dontShowRules = document.getElementById('dontShowRules');
 if (localStorage.getItem('hideRules') === 'true') {
@@ -20,18 +18,15 @@ document.getElementById('closeRulesBtn').addEventListener('click', () => {
   rulesModal.classList.add('hidden');
 });
 
-// 3. Variabili di Stato Local
 let currentRoom = null;
 let isHost = false;
 let draggedItem = null;
 
-// 4. Elementi DOM
 const joinScreen = document.getElementById('joinScreen');
 const lobbyScreen = document.getElementById('lobbyScreen');
 const gameScreen = document.getElementById('gameScreen');
 const endScreen = document.getElementById('endScreen');
 
-// Accesso/Creazione Stanza
 document.getElementById('joinBtn').addEventListener('click', () => {
   const name = document.getElementById('playerName').value.trim();
   const room = document.getElementById('roomCode').value.trim().toUpperCase();
@@ -42,7 +37,6 @@ document.getElementById('joinBtn').addEventListener('click', () => {
   socket.emit('joinRoom', { roomCode: room, playerName: name, playerId: playerId });
 });
 
-// Aggiornamento Lobby
 socket.on('roomUpdated', ({ players, hostId, gameStarted }) => {
   if (!gameStarted) {
     joinScreen.classList.add('hidden');
@@ -65,12 +59,10 @@ socket.on('roomUpdated', ({ players, hostId, gameStarted }) => {
   }
 });
 
-// Inizio Partita dall'Host
 document.getElementById('startGameBtn').addEventListener('click', () => {
   socket.emit('startGame', { roomCode: currentRoom });
 });
 
-// Ricezione Turno/Round
 socket.on('newRound', ({ judgeId, judgeName, events, isJudge }) => {
   lobbyScreen.classList.add('hidden');
   gameScreen.classList.remove('hidden');
@@ -86,7 +78,7 @@ socket.on('newRound', ({ judgeId, judgeName, events, isJudge }) => {
   if (isJudge) {
     roleBadge.innerText = "👨‍⚖️ SEI IL GIUDICE";
     roleBadge.className = "badge judge";
-    instructionText.innerText = "Ordina gli eventi da PEGGIOR (1) a MENO PEGGIO (5):";
+    instructionText.innerText = "Ordina gli eventi dal PEGGIORE (1) al MENO PEGGIO (5):";
   } else {
     roleBadge.innerText = `🎮 GIOCATORE (Giudice: ${judgeName})`;
     roleBadge.className = "badge";
@@ -96,7 +88,6 @@ socket.on('newRound', ({ judgeId, judgeName, events, isJudge }) => {
   renderSortableList(events);
 });
 
-// Rendering e Drag & Drop Lista
 function renderSortableList(events) {
   const list = document.getElementById('sortableList');
   list.innerHTML = '';
@@ -106,9 +97,16 @@ function renderSortableList(events) {
     li.className = 'sortable-item';
     li.draggable = true;
     li.dataset.id = evt.id;
-    li.innerHTML = `<span class="rank-num">${idx + 1}.</span> <span class="evt-text">${evt.text}</span>`;
+    li.innerHTML = `
+      <span class="rank-num">${idx + 1}.</span>
+      <span class="evt-text">${evt.text}</span>
+      <div class="move-btns">
+        <button class="btn-arrow up-btn">⬆️</button>
+        <button class="btn-arrow down-btn">⬇️</button>
+      </div>
+    `;
     
-    // Eventi Drag & Drop
+    // Drag & Drop
     li.addEventListener('dragstart', () => {
       draggedItem = li;
       li.classList.add('dragging');
@@ -117,6 +115,25 @@ function renderSortableList(events) {
     li.addEventListener('dragend', () => {
       li.classList.remove('dragging');
       updateRankNumbers();
+    });
+
+    // Pulsanti Up/Down
+    li.querySelector('.up-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const prev = li.previousElementSibling;
+      if (prev) {
+        list.insertBefore(li, prev);
+        updateRankNumbers();
+      }
+    });
+
+    li.querySelector('.down-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const next = li.nextElementSibling;
+      if (next) {
+        list.insertBefore(next, li);
+        updateRankNumbers();
+      }
     });
 
     list.appendChild(li);
@@ -153,7 +170,6 @@ function getDragAfterElement(container, y) {
   }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
-// Invia Ordine
 document.getElementById('submitOrderBtn').addEventListener('click', () => {
   const orderedIds = [...document.querySelectorAll('.sortable-item')].map(li => li.dataset.id);
   
@@ -163,15 +179,14 @@ document.getElementById('submitOrderBtn').addEventListener('click', () => {
   document.getElementById('waitingMessage').classList.remove('hidden');
 });
 
-// Mostra Risultati Round
 socket.on('roundEnded', ({ results, scores, isHost }) => {
   document.getElementById('waitingMessage').classList.add('hidden');
   const resultsDiv = document.getElementById('roundResults');
   resultsDiv.classList.remove('hidden');
 
-  let html = '<ul>';
+  let html = '<ul class="results-list">';
   results.forEach(r => {
-    html += `<li><b>${r.name}:</b> +${r.pointsGained} pt (Punteggio totale: ${r.totalScore})</li>`;
+    html += `<li><span><b>${r.name}:</b> +${r.pointsGained} pt</span> <span>Totale: <b>${r.totalScore} pt</b></span></li>`;
   });
   html += '</ul>';
   document.getElementById('resultsDetails').innerHTML = html;
@@ -183,7 +198,6 @@ socket.on('roundEnded', ({ results, scores, isHost }) => {
   }
 });
 
-// Termina Partita
 document.getElementById('endGameBtn')?.addEventListener('click', () => {
   if (confirm('Vuoi davvero terminare la partita e mostrare la classifica finale?')) {
     socket.emit('endGame', { roomCode: currentRoom });
@@ -196,9 +210,9 @@ socket.on('gameOver', ({ leaderboard }) => {
 
   const board = document.getElementById('finalLeaderboard');
   board.innerHTML = '';
-  leaderboard.sort((a,b) => b.score - a.score).forEach(p => {
+  leaderboard.sort((a,b) => b.score - a.score).forEach((p, idx) => {
     const li = document.createElement('li');
-    li.innerHTML = `<b>${p.name}</b>: ${p.score} punti`;
+    li.innerHTML = `<span>#${idx+1} <b>${p.name}</b></span> <span><b>${p.score} pt</b></span>`;
     board.appendChild(li);
   });
 });

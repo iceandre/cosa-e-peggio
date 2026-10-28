@@ -1,5 +1,5 @@
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   background-color: #121214;
   color: #f0f0f0;
   display: flex;
@@ -7,30 +7,31 @@ body {
   align-items: center;
   min-height: 100vh;
   margin: 0;
-  padding: 10px;
+  padding: 12px;
 }
 
 .container {
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
   text-align: center;
 }
 
-h1 { color: #ff4757; margin-bottom: 20px; }
+h1 { color: #ff4757; margin-bottom: 15px; font-size: 28px; }
 
 .card {
   background: #1e1e24;
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   margin-bottom: 20px;
 }
 
 input[type="text"] {
-  width: 90%;
-  padding: 12px;
-  margin: 8px 0;
-  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px;
+  margin: 10px 0;
+  border-radius: 8px;
   border: 1px solid #333;
   background: #2a2a32;
   color: white;
@@ -41,57 +42,71 @@ input[type="text"] {
   background-color: #ff4757;
   color: white;
   border: none;
-  padding: 12px 20px;
+  padding: 14px 20px;
   font-size: 16px;
-  border-radius: 6px;
+  font-weight: bold;
+  border-radius: 8px;
   cursor: pointer;
   margin-top: 10px;
   width: 100%;
+  transition: transform 0.1s ease;
 }
-.btn:hover { background-color: #ff6b81; }
+.btn:active { transform: scale(0.98); }
 .btn.success { background-color: #2ed573; }
-.btn.danger { background-color: #ff4757; font-size: 13px; padding: 6px 12px; width: auto; }
+.btn.danger { background-color: #ff4757; font-size: 12px; padding: 6px 12px; width: auto; }
 
 .hidden { display: none !important; }
 
 /* MODALE REGOLE */
 .modal {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100;
+  background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 100; padding: 15px;
 }
 .modal-content {
-  background: #1e1e24; padding: 25px; border-radius: 12px; max-width: 400px; text-align: left;
+  background: #1e1e24; padding: 25px; border-radius: 16px; max-width: 400px; text-align: left;
 }
 .modal-actions { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; }
 
-/* LISTA EVENTI TRASCINABILI */
-.sortable-list {
-  list-style: none;
-  padding: 0;
-  margin: 20px 0;
-}
+/* LISTA TRASCINABILE CON FRECCE */
+.sortable-list { list-style: none; padding: 0; margin: 15px 0; }
 .sortable-item {
   background: #2a2a32;
-  margin: 8px 0;
-  padding: 14px;
-  border-radius: 8px;
-  cursor: grab;
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   border-left: 5px solid #ff4757;
   user-select: none;
   text-align: left;
+  gap: 10px;
 }
-.sortable-item.dragging { opacity: 0.5; background: #3a3a45; }
-.rank-num { font-weight: bold; font-size: 18px; margin-right: 12px; color: #ff4757; }
+.sortable-item.dragging { opacity: 0.4; }
+.rank-num { font-weight: bold; font-size: 18px; color: #ff4757; min-width: 20px; }
+.evt-text { flex-grow: 1; font-size: 15px; line-height: 1.3; }
 
-/* BADGE RUOLO */
+.move-btns { display: flex; flex-direction: column; gap: 4px; }
+.btn-arrow {
+  background: #3a3a45; border: none; color: white; padding: 4px 8px;
+  border-radius: 4px; cursor: pointer; font-size: 11px;
+}
+.btn-arrow:hover { background: #4a4a58; }
+
+/* BADGES E LISTE RISULTATI */
 .badge {
-  display: inline-block; padding: 6px 12px; border-radius: 20px;
-  font-weight: bold; background: #3a3a45; margin-bottom: 10px;
+  display: inline-block; padding: 6px 14px; border-radius: 20px;
+  font-weight: bold; background: #3a3a45; font-size: 14px;
 }
 .badge.judge { background: #ffa502; color: #121214; }
 
-.header-info { display: flex; justify-content: space-between; align-items: center; }
-ul#playerList { list-style: none; padding: 0; text-align: left; }
-ul#playerList li { padding: 8px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
+.header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+ul#playerList, .results-list { list-style: none; padding: 0; text-align: left; }
+ul#playerList li, .results-list li {
+  padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;
+}
+ol#finalLeaderboard { list-style: none; padding: 0; text-align: left; }
+ol#finalLeaderboard li {
+  padding: 12px; margin: 6px 0; background: #2a2a32; border-radius: 8px; display: flex; justify-content: space-between;
+}
